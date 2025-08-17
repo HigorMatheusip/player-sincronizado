@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Festa Musical Sincronizada</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #121218;
+            --surface-color: #1A1A22;
+            --primary-color: #9f33ff;
+            --secondary-color: #00e5ff;
+            --text-color: #E1E1E6;
+            --text-muted-color: #A8A8B3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* --- Tela de Entrada --- */
+        #entry-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .entry-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--secondary-color);
+        }
+
+        .entry-box {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .entry-box h2 {
+            text-align: center;
+            color: var(--text-color);
+            font-weight: 600;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-field {
+            background-color: var(--background-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            color: var(--text-color);
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .btn {
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(159, 51, 255, 0.4);
+        }
+
+        /* --- Tela da Festa --- */
+        #party-screen {
+            display: none;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 95vh;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .party-header {
+            background-color: var(--surface-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .header-info .credits {
+            font-size: 0.8rem;
+            color: var(--text-muted-color);
+        }
+
+        .room-key-display {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .room-key-display span {
+            font-family: monospace;
+            background-color: var(--background-color);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            color: var(--secondary-color);
+            margin-left: 0.5rem;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .party-main {
+            display: flex;
+            flex-grow: 1;
+            gap: 1.5rem;
+            min-height: 0; /* Fix for flexbox overflow */
+        }
+
+        .player-section {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-width: 0; /* Fix for flexbox overflow */
+        }
+
+        #player-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: black;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #player-placeholder {
+            color: var(--text-muted-color);
+            font-size: 1.2rem;
+        }
+
+        #player {
+            width: 100%;
+            height: 100%;
+        }
+
+        #dj-controls {
+            display: none; /* Mostrado via JS para o DJ */
+            gap: 1rem;
+        }
+        
+        #dj-controls.active {
+            display: flex;
+        }
+
+        #dj-controls .input-field {
+            flex-grow: 1;
+        }
+
+        .participants-section {
+            width: 300px;
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .participants-section h3 {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.8rem;
+        }
+
+        #participants-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .participant {
+            padding: 0.5rem;
+            background-color: var(--background-color);
+            border-radius: 6px;
+        }
+        
+        .dj .participant-name::after {
+            content: '👑';
+            margin-left: 0.5rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, -10px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Responsividade --- */
+        @media (max-width: 900px) {
+            .party-main {
+                flex-direction: column;
+            }
+            .participants-section {
+                width: 100%;
+                max-height: 250px;
+            }
+            #party-screen {
+                height: auto;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .entry-title {
+                font-size: 2rem;
+            }
+            .party-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            #dj-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Tela de Entrada -->
+        <div id="entry-screen">
+            <h1 class="entry-title">Festa Musical Sincronizada</h1>
+            <div class="entry-box">
+                <h2>Criar uma Sala</h2>
+                <div class="input-group">
+                    <input type="text" id="create-username" class="input-field" placeholder="Seu nome de usuário">
+                </div>
+                <button id="create-room-btn" class="btn btn-primary">Criar Sala</button>
+            </div>
+            <div class="entry-box">
+                <h2>Entrar em uma Sala</h2>
+                <div class="input-group">
+                    <input type="text" id="join-username" class="input-field" placeholder="Seu nome de usuário">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="room-key-input" class="input-field" placeholder="Chave da sala">
+                </div>
+                <button id="join-room-btn" class="btn btn-primary">Entrar na Sala</button>
+            </div>
+        </div>
+
+        <!-- Tela da Festa -->
+        <div id="party-screen">
+            <header class="party-header">
+                <div class="header-info">
+                    <div class="room-key-display">Sala: <span id="room-key-display"></span></div>
+                    <div class="credits">Desenvolvido por Higor Matheus</div>
+                </div>
+                <button id="copy-link-btn" class="btn btn-secondary">Copiar Link da Sala</button>
+            </header>
+
+            <main class="party-main">
+                <section class="player-section">
+                    <div id="player-container">
+                        <div id="player-placeholder">Aguardando música...</div>
+                        <div id="player"></div>
+                    </div>
+                    <div id="dj-controls">
+                        <input type="text" id="video-url-input" class="input-field" placeholder="Cole o link do YouTube aqui">
+                        <button id="play-video-btn" class="btn btn-primary">Tocar</button>
+                    </div>
+                </section>
+
+                <aside class="participants-section">
+                    <h3>Participantes</h3>
+                    <ul id="participants-list"></ul>
+                </aside>
+            </main>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        // --- Configuração do Firebase ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1IEE4mLnTv2RPe4SA59qulMi0ztYucgU",
+            authDomain: "music-synchronizer-ip.firebaseapp.com",
+            databaseURL: "https://music-synchronizer-ip-default-rtdb.firebaseio.com",
+            projectId: "music-synchronizer-ip",
+            storageBucket: "music-synchronizer-ip.appspot.com",
+            messagingSenderId: "479191802300",
+            appId: "1:479191802300:web:77729d3648f8f2a3400bb9"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // --- Variáveis Globais ---
+        let player;
+        let isYouTubeApiReady = false;
+        let currentRoomKey = null;
+        let currentUserId = null;
+        let currentUsername = null;
+        let isDj = false;
+
+        // --- Elementos do DOM ---
+        const entryScreen = document.getElementById('entry-screen');
+        const partyScreen = document.getElementById('party-screen');
+        const createUsernameInput = document.getElementById('create-username');
+        const createRoomBtn = document.getElementById('create-room-btn');
+        const joinUsernameInput = document.getElementById('join-username');
+        const roomKeyInput = document.getElementById('room-key-input');
+        const joinRoomBtn = document.getElementById('join-room-btn');
+        const roomKeyDisplay = document.getElementById('room-key-display');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const participantsList = document.getElementById('participants-list');
+        const djControls = document.getElementById('dj-controls');
+        const videoUrlInput = document.getElementById('video-url-input');
+        const playVideoBtn = document.getElementById('play-video-btn');
+        const playerContainer = document.getElementById('player-container');
+        const playerPlaceholder = document.getElementById('player-placeholder');
+
+        // --- Funções Auxiliares ---
+        function generateRoomKey() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        function getYouTubeVideoId(url) {
+            if (!url) return null;
+            let videoId = null;
+            const urlObj = new URL(url);
+            if (urlObj.hostname === 'youtu.be') {
+                videoId = urlObj.pathname.slice(1);
+            } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
+                videoId = urlObj.searchParams.get('v');
+            }
+            return videoId;
+        }
+
+        // --- Lógica da Aplicação ---
+
+        // 1. Inicialização e Event Listeners
+        window.onload = () => {
+            currentUserId = `user-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        };
+
+        createRoomBtn.addEventListener('click', handleCreateRoom);
+        joinRoomBtn.addEventListener('click', handleJoinRoom);
+        playVideoBtn.addEventListener('click', handlePlayVideo);
+        copyLinkBtn.addEventListener('click', handleCopyLink);
+
+        // 2. Lógica de Criação e Entrada na Sala
+        function handleCreateRoom() {
+            currentUsername = createUsernameInput.value.trim();
+            if (!currentUsername) {
+                showToast("Por favor, insira um nome de usuário.");
+                return;
+            }
+            isDj = true;
+            currentRoomKey = generateRoomKey();
+            const roomRef = database.ref(`rooms/${currentRoomKey}`);
+            
+            roomRef.set({
+                dj: currentUserId,
+                currentVideoId: null,
+                createdAt: firebase.database.ServerValue.TIMESTAMP
+            }).then(() => {
+                joinRoom(currentRoomKey);
+            });
+        }
+
+        function handleJoinRoom() {
+            currentUsername = joinUsernameInput.value.trim();
+            const roomKey = roomKeyInput.value.trim().toUpperCase();
+            if (!currentUsername || !roomKey) {
+                showToast("Por favor, preencha todos os campos.");
+                return;
+            }
+            
+            const roomRef = database.ref(`rooms/${roomKey}`);
+            roomRef.once('value', snapshot => {
+                if (snapshot.exists()) {
+                    currentRoomKey = roomKey;
+                    joinRoom(currentRoomKey);
+                } else {
+                    showToast("Sala não encontrada.");
+                }
+            });
+        }
+
+        function joinRoom(roomKey) {
+            const userRef = database.ref(`rooms/${roomKey}/participants/${currentUserId}`);
+            userRef.set({
+                username: currentUsername,
+                isDj: isDj
+            });
+            
+            // Remove o usuário quando ele desconectar
+            userRef.onDisconnect().remove();
+
+            switchToPartyView(roomKey);
+            listenToRoomUpdates(roomKey);
+        }
+
+        // 3. Gerenciamento da Tela da Festa
+        function switchToPartyView(roomKey) {
+            entryScreen.style.display = 'none';
+            partyScreen.style.display = 'flex';
+            roomKeyDisplay.textContent = roomKey;
+
+            if (isDj) {
+                djControls.classList.add('active');
+            }
+        }
+
+        function listenToRoomUpdates(roomKey) {
+            const roomRef = database.ref(`rooms/${roomKey}`);
+            roomRef.on('value', snapshot => {
+                const roomData = snapshot.val();
+                if (!roomData) {
+                    // Sala foi deletada ou não existe mais
+                    showToast("A sala foi fechada.");
+                    window.location.reload();
+                    return;
+                }
+                
+                updateParticipantsList(roomData.participants);
+                handleVideoChange(roomData.currentVideoId);
+            });
+        }
+
+        function updateParticipantsList(participants) {
+            participantsList.innerHTML = '';
+            if (!participants) return;
+
+            Object.values(participants).forEach(p => {
+                const li = document.createElement('li');
+                li.classList.add('participant');
+                if (p.isDj) {
+                    li.classList.add('dj');
+                }
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.classList.add('participant-name');
+                nameSpan.textContent = p.username;
+                
+                li.appendChild(nameSpan);
+                participantsList.appendChild(li);
+            });
+        }
+
+        function handleCopyLink() {
+            const inviteLink = `${window.location.href.split('?')[0]}?room=${currentRoomKey}`;
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                showToast("Link da sala copiado!");
+            }).catch(err => {
+                showToast("Erro ao copiar o link.");
+            });
+        }
+        
+        // Autojoin via URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomFromUrl = urlParams.get('room');
+        if (roomFromUrl) {
+            roomKeyInput.value = roomFromUrl;
+        }
+
+        // 4. Lógica do Player de Vídeo
+        
+        // Esta função é chamada automaticamente pela API do YouTube quando estiver pronta.
+        function onYouTubeIframeAPIReady() {
+            isYouTubeApiReady = true;
+        }
+
+        function handlePlayVideo() {
+            const videoUrl = videoUrlInput.value.trim();
+            const videoId = getYouTubeVideoId(videoUrl);
+            
+            if (!videoId) {
+                showToast("URL do YouTube inválida.");
+                return;
+            }
+            
+            database.ref(`rooms/${currentRoomKey}/currentVideoId`).set(videoId);
+        }
+
+        function handleVideoChange(videoId) {
+            if (!isYouTubeApiReady) {
+                // Se a API não estiver pronta, espera um pouco e tenta novamente.
+                setTimeout(() => handleVideoChange(videoId), 100);
+                return;
+            }
+            
+            if (!videoId) {
+                // Nenhum vídeo tocando
+                if (player) {
+                    player.destroy();
+                    player = null;
+                }
+                playerPlaceholder.style.display = 'block';
+                return;
+            }
+            
+            playerPlaceholder.style.display = 'none';
+
+            if (!player) {
+                // Cria o player pela primeira vez
+                player = new YT.Player('player', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: videoId,
+                    playerVars: {
+                        'playsinline': 1,
+                        'autoplay': 1,
+                        'controls': isDj ? 1 : 0, // Controles apenas para o DJ
+                        'disablekb': 1,
+                        'modestbranding': 1
+                    },
+                });
+            } else {
+                // Carrega um novo vídeo em um player existente
+                player.loadVideoById(videoId);
+            }
+        }
+    </script>
+</body>
+</html>
