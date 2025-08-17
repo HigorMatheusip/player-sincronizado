@@ -25,6 +25,10 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--background-color);
@@ -32,14 +36,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             padding: 1rem;
         }
 
         .container {
             width: 100%;
             max-width: 1400px;
+            height: 100%;
+            max-height: 95vh;
             margin: auto;
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- Tela de Entrada --- */
@@ -49,6 +56,7 @@
             align-items: center;
             gap: 2rem;
             animation: fadeIn 0.5s ease-in-out;
+            margin: auto;
         }
 
         .entry-title {
@@ -127,7 +135,7 @@
             display: none;
             flex-direction: column;
             gap: 1.5rem;
-            height: 95vh;
+            height: 100%;
             animation: fadeIn 0.5s ease-in-out;
         }
 
@@ -139,6 +147,7 @@
             justify-content: space-between;
             align-items: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
         }
         
         .header-info {
@@ -207,6 +216,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding-bottom: 0.8rem;
             margin-bottom: 0.5rem;
+            flex-shrink: 0;
         }
 
         .list {
@@ -268,7 +278,7 @@
 
         .request-item { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
         .request-info { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .request-actions { display: flex; gap: 0.5rem; }
+        .request-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
         .request-actions .btn { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
         .btn-accept { background-color: var(--success-color); color: var(--background-color); }
         .btn-decline { background-color: var(--danger-color); color: white; }
@@ -288,6 +298,7 @@
         }
         .chat-message {
             margin-bottom: 0.5rem;
+            word-break: break-word;
         }
         .chat-message .username {
             font-weight: bold;
@@ -319,9 +330,25 @@
             .player-section { grid-column: 1; grid-row: 1 / span 2; }
         }
         @media (max-width: 900px) {
-            .party-main { display: flex; flex-direction: column; }
-            .sidebar, .right-sidebar { width: 100%; max-height: 250px; }
-            #party-screen { height: auto; }
+            .container {
+                height: auto;
+                max-height: none;
+            }
+             #party-screen {
+                height: auto;
+            }
+            .party-main { 
+                display: flex; 
+                flex-direction: column; 
+                overflow-y: auto;
+            }
+            .sidebar, .right-sidebar { 
+                width: 100%; 
+                max-height: 30vh; /* Alterado para usar vh */
+            }
+            .right-sidebar {
+                max-height: none; /* Container não precisa de max-height */
+            }
         }
         @media (max-width: 600px) {
             .entry-title { font-size: 2rem; }
@@ -559,6 +586,7 @@
         }
 
         function switchToPartyView(roomKey) {
+            document.querySelector('.container').style.margin = '0 auto'; // Reset margin
             entryScreen.style.display = 'none';
             partyScreen.style.display = 'flex';
             roomKeyDisplay.textContent = roomKey;
@@ -571,7 +599,7 @@
             database.ref(`rooms/${roomKey}/participants`).on('value', s => updateParticipantsList(s.val()));
             database.ref(`rooms/${roomKey}/playback`).on('value', s => handlePlaybackChange(s.val()));
             database.ref(`rooms/${roomKey}/queue`).on('value', s => updateQueueList(s.val()));
-            database.ref(`rooms/${roomKey}/chat`).on('child_added', s => updateChat(s.val()));
+            database.ref(`rooms/${roomKey}/chat`).limitToLast(50).on('child_added', s => updateChat(s.val()));
             if (isDj) {
                 database.ref(`rooms/${roomKey}/linkRequests`).on('value', s => updateLinkRequestsList(s.val()));
                 database.ref(`rooms/${roomKey}/textRequests`).on('value', s => updateTextRequestsList(s.val()));
