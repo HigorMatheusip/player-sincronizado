@@ -27,6 +27,7 @@
 
         html, body {
             height: 100%;
+            overflow: hidden; /* Prevenir scroll na página inteira */
         }
 
         body {
@@ -67,6 +68,22 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--secondary-color);
+        }
+        
+        .title-container {
+            position: relative;
+        }
+
+        .version-display-main {
+            position: absolute;
+            bottom: -5px;
+            right: -10px;
+            font-size: 0.8rem;
+            color: var(--text-muted-color);
+            background-color: var(--surface-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .entry-box {
@@ -159,15 +176,6 @@
         .header-info .credits {
             font-size: 0.8rem;
             color: var(--text-muted-color);
-        }
-        
-        .version-display {
-            font-size: 0.7rem;
-            color: var(--text-muted-color);
-            margin-left: 0.5rem;
-            background-color: var(--background-color);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
         }
 
         .room-key-display {
@@ -340,32 +348,28 @@
         }
         
         @media (max-width: 900px) {
-            .container {
-                height: 100%; /* Permitir que o container use a altura total */
+            body {
+                overflow: auto; /* Permitir scroll no body em mobile */
+            }
+            .container, #party-screen {
+                height: auto;
                 max-height: none;
             }
-             #party-screen {
-                height: 100%;
-             }
             .party-main { 
                 display: flex; 
                 flex-direction: column; 
             }
-            .sidebar { 
+            .sidebar, .right-sidebar { 
                 width: 100%; 
-                min-height: 150px; /* Altura mínima para ser visível */
-                max-height: 25vh; /* Limitar altura para não dominar a tela */
             }
-            .right-sidebar {
-                flex-grow: 1; /* Fazer a coluna da direita crescer */
-                min-height: 0;
+            #participants-section {
+                max-height: 200px;
             }
             #queue-section {
-                min-height: 200px;
+                max-height: 300px;
             }
             #chat-section {
-                flex-grow: 1; /* Permitir que o chat cresça */
-                min-height: 250px; /* Altura mínima para o chat */
+                height: 400px; /* Altura fixa para o chat ser sempre utilizável */
             }
         }
         
@@ -381,7 +385,10 @@
     <div class="container">
         <!-- Tela de Entrada -->
         <div id="entry-screen">
-            <h1 class="entry-title">Festa Musical Sincronizada</h1>
+            <div class="title-container">
+                <h1 class="entry-title">Festa Musical Sincronizada</h1>
+                <span class="version-display-main">v1.7</span>
+            </div>
             <div class="entry-box">
                 <h2>Criar uma Sala</h2>
                 <div class="input-group">
@@ -408,7 +415,6 @@
                     <div class="room-key-display">Sala: <span id="room-key-display"></span></div>
                     <div class="credits">
                         Desenvolvido por Higor Matheus
-                        <span class="version-display">v1.6</span>
                     </div>
                 </div>
                 <button id="copy-link-btn" class="btn btn-secondary">Copiar Link da Sala</button>
