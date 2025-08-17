@@ -27,7 +27,6 @@
 
         html, body {
             height: 100%;
-            overflow: hidden; /* Prevenir scroll na página inteira */
         }
 
         body {
@@ -38,6 +37,7 @@
             justify-content: center;
             align-items: center;
             padding: 1rem;
+            overflow: hidden; /* Prevenir scroll duplo */
         }
 
         .container {
@@ -76,7 +76,17 @@
             color: var(--text-muted-color);
             font-size: 1.1rem;
             line-height: 1.6;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            text-decoration: underline;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
         }
 
         .version-display-main {
@@ -344,6 +354,39 @@
             color: var(--text-muted-color);
             flex-shrink: 0;
         }
+        
+        /* --- Modal "Como Usar" --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            padding: 1rem;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal-content {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .modal-content h2 { color: var(--secondary-color); margin-bottom: 1.5rem; }
+        .modal-content h3 { color: var(--primary-color); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .modal-content p, .modal-content li { color: var(--text-muted-color); line-height: 1.6; }
+        .modal-content ul { list-style-position: inside; padding-left: 0.5rem; }
+        .modal-content .bug-report { margin-top: 2rem; font-style: italic; font-size: 0.9rem; }
+        .close-btn {
+            position: absolute; top: 1rem; right: 1rem;
+            background: none; border: none; color: white;
+            font-size: 2rem; cursor: pointer;
+        }
+
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -400,6 +443,7 @@
             <p class="intro-text">
                 Crie uma sala, convide os seus amigos e carregue no play. O Andraudio sincroniza a música para todos em tempo real, não importa a distância. A banda sonora perfeita para os seus jogos, estudos ou para simplesmente curtirem o momento juntos.
             </p>
+            <button id="how-to-use-btn" class="btn-link">Como Usar?</button>
             <div class="entry-box">
                 <h2>Comece a festa</h2>
                 <div class="input-group">
@@ -417,7 +461,7 @@
                 </div>
                 <button id="join-room-btn" class="btn btn-primary">Entrar na Sala</button>
             </div>
-            <span class="version-display-main">v1.8 Beta</span>
+            <span class="version-display-main">v1.9 Beta</span>
         </div>
 
         <!-- Tela da Festa -->
@@ -489,12 +533,40 @@
                 </aside>
             </main>
             <footer class="party-footer">
-                Andraudio v1.8 Beta | Idealizado por Higor Matheus
+                Andraudio v1.9 Beta | Idealizado por Higor Matheus
             </footer>
         </div>
     </div>
     
     <div id="toast" class="toast"></div>
+    
+    <!-- Modal Como Usar -->
+    <div id="how-to-use-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button id="close-modal-btn" class="close-btn">&times;</button>
+            <h2>Como Usar o Andraudio</h2>
+            
+            <h3>Para o DJ 🎧</h3>
+            <ul>
+                <li><b>Criar Sala:</b> Escolha um nome e crie uma sala. A chave da sala será gerada automaticamente.</li>
+                <li><b>Partilhar:</b> Copie o link da sala e envie aos seus amigos.</li>
+                <li><b>Tocar Música:</b> Cole um link do YouTube (vídeo ou playlist) e carregue no botão correspondente para começar a festa.</li>
+                <li><b>Gerir Pedidos:</b> Aceite ou recuse pedidos com link e marque como concluídos os pedidos por texto.</li>
+            </ul>
+
+            <h3>Para os Participantes</h3>
+            <ul>
+                <li><b>Entrar na Sala:</b> Insira o seu nome e a chave da sala que o seu amigo lhe enviou.</li>
+                <li><b>Pedir Músicas:</b> Pode enviar um link direto do YouTube ou pedir pelo nome para o DJ encontrar.</li>
+                <li><b>Conversar:</b> Use o chat para conversar com todos na sala em tempo real.</li>
+            </ul>
+            
+            <p class="bug-report">
+                O Andraudio ainda está em fase de testes (Beta). Se encontrar algum bug ou tiver alguma sugestão, por favor avise o criador da sala!
+            </p>
+        </div>
+    </div>
+
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -551,6 +623,9 @@
         const chatMessages = document.getElementById('chat-messages');
         const chatInput = document.getElementById('chat-input');
         const sendChatBtn = document.getElementById('send-chat-btn');
+        const howToUseBtn = document.getElementById('how-to-use-btn');
+        const modal = document.getElementById('how-to-use-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
 
         // --- Funções Auxiliares ---
         const generateRoomKey = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -730,6 +805,12 @@
 
         copyLinkBtn.addEventListener('click', () => {
             navigator.clipboard.writeText(`${location.href.split('?')[0]}?room=${currentRoomKey}`).then(() => showToast("Link da sala copiado!"));
+        });
+
+        howToUseBtn.addEventListener('click', () => modal.classList.add('visible'));
+        closeModalBtn.addEventListener('click', () => modal.classList.remove('visible'));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('visible');
         });
 
         const urlParams = new URLSearchParams(location.search);
