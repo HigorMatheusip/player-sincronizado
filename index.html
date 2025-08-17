@@ -399,6 +399,9 @@
         let currentUserId = null;
         let currentUsername = null;
         let isDj = false;
+        let serverTimeOffset = 0;
+        let syncInterval;
+        let lastKnownPlaybackState = {}; // Guarda o último estado recebido para evitar processamento desnecessário
 
         // --- Elementos do DOM ---
         const entryScreen = document.getElementById('entry-screen');
@@ -433,21 +436,30 @@
         
         function getYouTubeVideoId(url) {
             if (!url) return null;
-            let videoId = null;
-            const urlObj = new URL(url);
-            if (urlObj.hostname === 'youtu.be') {
-                videoId = urlObj.pathname.slice(1);
-            } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
-                videoId = urlObj.searchParams.get('v');
+            try {
+                const urlObj = new URL(url);
+                if (urlObj.hostname === 'youtu.be') {
+                    return urlObj.pathname.slice(1);
+                } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
+                    return urlObj.searchParams.get('v');
+                }
+            } catch (e) {
+                console.error("URL inválida:", e);
+                return null;
             }
-            return videoId;
+            return null;
         }
+
+        const getServerTime = () => Date.now() + serverTimeOffset;
 
         // --- Lógica da Aplicação ---
 
         // 1. Inicialização e Event Listeners
         window.onload = () => {
             currentUserId = `user-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            database.ref('.info/serverTimeOffset').on('value', (snapshot) => {
+                serverTimeOffset = snapshot.val();
+            });
         };
 
         createRoomBtn.addEventListener('click', handleCreateRoom);
@@ -468,7 +480,12 @@
             
             roomRef.set({
                 dj: currentUserId,
-                currentVideoId: null,
+                playback: {
+                    videoId: null,
+                    isPlaying: false,
+                    videoTime: 0,
+                    timestamp: 0
+                },
                 createdAt: firebase.database.ServerValue.TIMESTAMP
             }).then(() => {
                 joinRoom(currentRoomKey);
@@ -501,7 +518,6 @@
                 isDj: isDj
             });
             
-            // Remove o usuário quando ele desconectar
             userRef.onDisconnect().remove();
 
             switchToPartyView(roomKey);
@@ -524,14 +540,13 @@
             roomRef.on('value', snapshot => {
                 const roomData = snapshot.val();
                 if (!roomData) {
-                    // Sala foi deletada ou não existe mais
                     showToast("A sala foi fechada.");
                     window.location.reload();
                     return;
                 }
                 
                 updateParticipantsList(roomData.participants);
-                handleVideoChange(roomData.currentVideoId);
+                handlePlaybackChange(roomData.playback);
             });
         }
 
@@ -559,26 +574,23 @@
             const inviteLink = `${window.location.href.split('?')[0]}?room=${currentRoomKey}`;
             navigator.clipboard.writeText(inviteLink).then(() => {
                 showToast("Link da sala copiado!");
-            }).catch(err => {
-                showToast("Erro ao copiar o link.");
             });
         }
         
-        // Autojoin via URL
         const urlParams = new URLSearchParams(window.location.search);
         const roomFromUrl = urlParams.get('room');
         if (roomFromUrl) {
             roomKeyInput.value = roomFromUrl;
         }
 
-        // 4. Lógica do Player de Vídeo
+        // 4. Lógica do Player de Vídeo (SINCRONIZADO)
         
-        // Esta função é chamada automaticamente pela API do YouTube quando estiver pronta.
         function onYouTubeIframeAPIReady() {
             isYouTubeApiReady = true;
         }
 
         function handlePlayVideo() {
+            if (!isDj) return;
             const videoUrl = videoUrlInput.value.trim();
             const videoId = getYouTubeVideoId(videoUrl);
             
@@ -587,45 +599,119 @@
                 return;
             }
             
-            database.ref(`rooms/${currentRoomKey}/currentVideoId`).set(videoId);
+            database.ref(`rooms/${currentRoomKey}/playback`).set({
+                videoId: videoId,
+                isPlaying: true,
+                videoTime: 0,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
         }
 
-        function handleVideoChange(videoId) {
-            if (!isYouTubeApiReady) {
-                // Se a API não estiver pronta, espera um pouco e tenta novamente.
-                setTimeout(() => handleVideoChange(videoId), 100);
+        function handlePlaybackChange(playback) {
+            if (!isYouTubeApiReady || !playback) {
                 return;
             }
-            
+
+            lastKnownPlaybackState = playback;
+            const { videoId } = playback;
+
             if (!videoId) {
-                // Nenhum vídeo tocando
-                if (player) {
-                    player.destroy();
-                    player = null;
-                }
                 playerPlaceholder.style.display = 'block';
+                if (player) player.destroy();
+                player = null;
                 return;
             }
             
             playerPlaceholder.style.display = 'none';
 
             if (!player) {
-                // Cria o player pela primeira vez
                 player = new YT.Player('player', {
                     height: '100%',
                     width: '100%',
                     videoId: videoId,
                     playerVars: {
                         'playsinline': 1,
-                        'autoplay': 1,
-                        'controls': isDj ? 1 : 0, // Controles apenas para o DJ
+                        'autoplay': 0, // Autoplay é controlado pela lógica de sincronização
+                        'controls': isDj ? 1 : 0,
                         'disablekb': 1,
                         'modestbranding': 1
                     },
+                    events: {
+                        'onReady': onPlayerReady,
+                        'onStateChange': onPlayerStateChange
+                    }
                 });
             } else {
-                // Carrega um novo vídeo em um player existente
-                player.loadVideoById(videoId);
+                if (player.getVideoData().video_id !== videoId) {
+                    player.loadVideoById(videoId);
+                } else {
+                    syncPlayerState(playback);
+                }
+            }
+        }
+
+        function onPlayerReady(event) {
+            syncPlayerState(lastKnownPlaybackState);
+            if (isDj) {
+                // Inicia a sincronização periódica para o DJ
+                syncInterval = setInterval(() => {
+                    if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                        database.ref(`rooms/${currentRoomKey}/playback`).update({
+                            videoTime: player.getCurrentTime(),
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                        });
+                    }
+                }, 3000);
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            if (!isDj) return; // Apenas o DJ pode alterar o estado
+
+            const playbackRef = database.ref(`rooms/${currentRoomKey}/playback`);
+            const currentTime = player.getCurrentTime();
+
+            if (event.data === YT.PlayerState.PLAYING) {
+                playbackRef.set({
+                    videoId: player.getVideoData().video_id,
+                    isPlaying: true,
+                    videoTime: currentTime,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                });
+            } else if (event.data === YT.PlayerState.PAUSED) {
+                playbackRef.update({
+                    isPlaying: false,
+                    videoTime: currentTime
+                });
+            }
+        }
+
+        function syncPlayerState(playback) {
+            if (!player || !playback || !playback.videoId) return;
+
+            const { isPlaying, videoTime, timestamp } = playback;
+            
+            let targetTime = videoTime;
+            if (isPlaying) {
+                // Calcula o tempo atual do vídeo com base no tempo da última atualização do DJ
+                const timeSinceLastUpdate = (getServerTime() - timestamp) / 1000.0;
+                targetTime = videoTime + timeSinceLastUpdate;
+            }
+
+            const currentTime = player.getCurrentTime();
+            const timeDifference = Math.abs(currentTime - targetTime);
+
+            // Apenas busca (seek) se a diferença for maior que um limiar (ex: 1.5 segundos)
+            // para evitar saltos desnecessários por pequenas latências.
+            if (timeDifference > 1.5) {
+                player.seekTo(targetTime, true);
+            }
+
+            // Sincroniza o estado de play/pause
+            if (isPlaying && player.getPlayerState() !== YT.PlayerState.PLAYING) {
+                player.playVideo();
+            } else if (!isPlaying && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                player.pauseVideo();
             }
         }
     </script>
