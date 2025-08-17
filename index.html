@@ -599,7 +599,12 @@
             database.ref(`rooms/${roomKey}/participants`).on('value', s => updateParticipantsList(s.val()));
             database.ref(`rooms/${roomKey}/playback`).on('value', s => handlePlaybackChange(s.val()));
             database.ref(`rooms/${roomKey}/queue`).on('value', s => updateQueueList(s.val()));
-            database.ref(`rooms/${roomKey}/chat`).limitToLast(50).on('child_added', s => updateChat(s.val()));
+            
+            // CORREÇÃO: Usar 'child_added' para carregar mensagens existentes e novas
+            const chatRef = database.ref(`rooms/${roomKey}/chat`);
+            chatMessages.innerHTML = ''; // Limpar chat ao entrar
+            chatRef.limitToLast(50).on('child_added', s => updateChat(s.val()));
+
             if (isDj) {
                 database.ref(`rooms/${roomKey}/linkRequests`).on('value', s => updateLinkRequestsList(s.val()));
                 database.ref(`rooms/${roomKey}/textRequests`).on('value', s => updateTextRequestsList(s.val()));
@@ -656,7 +661,10 @@
             li.className = 'list-item chat-message';
             li.innerHTML = `<span class="username">${msg.username}:</span><span class="text">${msg.text}</span>`;
             chatMessages.appendChild(li);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // CORREÇÃO: Melhorar o scroll
+            setTimeout(() => {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 0);
         };
 
         linkRequestsList.addEventListener('click', e => {
