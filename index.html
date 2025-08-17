@@ -160,6 +160,15 @@
             font-size: 0.8rem;
             color: var(--text-muted-color);
         }
+        
+        .version-display {
+            font-size: 0.7rem;
+            color: var(--text-muted-color);
+            margin-left: 0.5rem;
+            background-color: var(--background-color);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+        }
 
         .room-key-display {
             font-size: 1rem;
@@ -329,27 +338,37 @@
             .right-sidebar { grid-column: 2; grid-row: 2; }
             .player-section { grid-column: 1; grid-row: 1 / span 2; }
         }
+        
         @media (max-width: 900px) {
             .container {
-                height: auto;
+                height: 100%; /* Permitir que o container use a altura total */
                 max-height: none;
             }
              #party-screen {
-                height: auto;
-            }
+                height: 100%;
+             }
             .party-main { 
                 display: flex; 
                 flex-direction: column; 
-                overflow-y: auto;
             }
-            .sidebar, .right-sidebar { 
+            .sidebar { 
                 width: 100%; 
-                max-height: 30vh; /* Alterado para usar vh */
+                min-height: 150px; /* Altura mínima para ser visível */
+                max-height: 25vh; /* Limitar altura para não dominar a tela */
             }
             .right-sidebar {
-                max-height: none; /* Container não precisa de max-height */
+                flex-grow: 1; /* Fazer a coluna da direita crescer */
+                min-height: 0;
+            }
+            #queue-section {
+                min-height: 200px;
+            }
+            #chat-section {
+                flex-grow: 1; /* Permitir que o chat cresça */
+                min-height: 250px; /* Altura mínima para o chat */
             }
         }
+        
         @media (max-width: 600px) {
             .entry-title { font-size: 2rem; }
             .party-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
@@ -387,7 +406,10 @@
             <header class="party-header">
                 <div class="header-info">
                     <div class="room-key-display">Sala: <span id="room-key-display"></span></div>
-                    <div class="credits">Desenvolvido por Higor Matheus</div>
+                    <div class="credits">
+                        Desenvolvido por Higor Matheus
+                        <span class="version-display">v1.6</span>
+                    </div>
                 </div>
                 <button id="copy-link-btn" class="btn btn-secondary">Copiar Link da Sala</button>
             </header>
@@ -600,9 +622,8 @@
             database.ref(`rooms/${roomKey}/playback`).on('value', s => handlePlaybackChange(s.val()));
             database.ref(`rooms/${roomKey}/queue`).on('value', s => updateQueueList(s.val()));
             
-            // CORREÇÃO: Usar 'child_added' para carregar mensagens existentes e novas
             const chatRef = database.ref(`rooms/${roomKey}/chat`);
-            chatMessages.innerHTML = ''; // Limpar chat ao entrar
+            chatMessages.innerHTML = '';
             chatRef.limitToLast(50).on('child_added', s => updateChat(s.val()));
 
             if (isDj) {
@@ -661,7 +682,6 @@
             li.className = 'list-item chat-message';
             li.innerHTML = `<span class="username">${msg.username}:</span><span class="text">${msg.text}</span>`;
             chatMessages.appendChild(li);
-            // CORREÇÃO: Melhorar o scroll
             setTimeout(() => {
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }, 0);
