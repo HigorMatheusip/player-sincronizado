@@ -15,6 +15,8 @@
             --secondary-color: #00e5ff;
             --text-color: #E1E1E6;
             --text-muted-color: #A8A8B3;
+            --success-color: #00e5ff;
+            --danger-color: #ff4757;
         }
 
         * {
@@ -36,7 +38,7 @@
 
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: auto;
         }
 
@@ -176,18 +178,53 @@
         }
         
         .party-main {
-            display: flex;
-            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
             gap: 1.5rem;
-            min-height: 0; /* Fix for flexbox overflow */
+            flex-grow: 1;
+            min-height: 0;
         }
 
+        .sidebar {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.8rem;
+        }
+
+        .list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .list-item {
+            padding: 0.5rem;
+            background-color: var(--background-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .dj .participant-name::after {
+            content: '👑';
+            margin-left: 0.5rem;
+        }
+        
         .player-section {
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
-            min-width: 0; /* Fix for flexbox overflow */
+            min-width: 0;
         }
 
         #player-container {
@@ -212,53 +249,40 @@
             height: 100%;
         }
 
-        #dj-controls {
-            display: none; /* Mostrado via JS para o DJ */
+        .controls {
+            display: flex;
             gap: 1rem;
         }
         
-        #dj-controls.active {
-            display: flex;
-        }
-
-        #dj-controls .input-field {
+        .controls .input-field {
             flex-grow: 1;
         }
 
-        .participants-section {
-            width: 300px;
-            background-color: var(--surface-color);
-            border-radius: 12px;
-            padding: 1.5rem;
+        #dj-requests-section { display: none; }
+        #dj-requests-section.active { display: flex; flex-direction: column; gap: 1rem; }
+
+        .request-item {
             display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow-y: auto;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
         }
+        .request-info {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .request-info span {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        .request-actions .btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        .btn-accept { background-color: var(--success-color); color: var(--background-color); }
+        .btn-decline { background-color: var(--danger-color); color: white; }
 
-        .participants-section h3 {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 0.8rem;
-        }
-
-        #participants-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-
-        .participant {
-            padding: 0.5rem;
-            background-color: var(--background-color);
-            border-radius: 6px;
-        }
-        
-        .dj .participant-name::after {
-            content: '👑';
-            margin-left: 0.5rem;
-        }
 
         .toast {
             position: fixed;
@@ -286,13 +310,32 @@
         }
 
         /* --- Responsividade --- */
+        @media (max-width: 1200px) {
+            .party-main {
+                grid-template-columns: 1fr 300px;
+            }
+            #participants-section {
+                grid-column: 2;
+                grid-row: 1 / span 2;
+            }
+            #queue-section {
+                grid-column: 1;
+                grid-row: 2;
+            }
+            .player-section {
+                grid-column: 1;
+                grid-row: 1;
+            }
+        }
+        
         @media (max-width: 900px) {
             .party-main {
+                display: flex;
                 flex-direction: column;
             }
-            .participants-section {
+            .sidebar {
                 width: 100%;
-                max-height: 250px;
+                max-height: 200px;
             }
             #party-screen {
                 height: auto;
@@ -308,7 +351,7 @@
                 gap: 1rem;
                 align-items: flex-start;
             }
-            #dj-controls {
+            .controls {
                 flex-direction: column;
             }
         }
@@ -350,20 +393,35 @@
             </header>
 
             <main class="party-main">
+                <aside id="participants-section" class="sidebar">
+                    <h3>Participantes</h3>
+                    <ul id="participants-list" class="list"></ul>
+                </aside>
+
                 <section class="player-section">
                     <div id="player-container">
                         <div id="player-placeholder">Aguardando música...</div>
                         <div id="player"></div>
                     </div>
-                    <div id="dj-controls">
-                        <input type="text" id="video-url-input" class="input-field" placeholder="Cole o link do YouTube aqui">
+                    
+                    <div id="dj-controls" class="controls">
+                        <input type="text" id="dj-video-url-input" class="input-field" placeholder="Cole um link para tocar agora">
                         <button id="play-video-btn" class="btn btn-primary">Tocar</button>
+                    </div>
+
+                    <div id="user-controls" class="controls">
+                        <input type="text" id="user-video-url-input" class="input-field" placeholder="Cole um link para pedir uma música">
+                        <button id="request-song-btn" class="btn btn-secondary">Pedir Música</button>
                     </div>
                 </section>
 
-                <aside class="participants-section">
-                    <h3>Participantes</h3>
-                    <ul id="participants-list"></ul>
+                <aside id="queue-section" class="sidebar">
+                    <h3>Fila de Músicas</h3>
+                    <ul id="queue-list" class="list"></ul>
+                    <div id="dj-requests-section">
+                        <h3>Pedidos Pendentes</h3>
+                        <ul id="requests-list" class="list"></ul>
+                    </div>
                 </aside>
             </main>
         </div>
@@ -401,7 +459,7 @@
         let isDj = false;
         let serverTimeOffset = 0;
         let syncInterval;
-        let lastKnownPlaybackState = {}; // Guarda o último estado recebido para evitar processamento desnecessário
+        let lastKnownPlaybackState = {};
 
         // --- Elementos do DOM ---
         const entryScreen = document.getElementById('entry-screen');
@@ -415,10 +473,15 @@
         const copyLinkBtn = document.getElementById('copy-link-btn');
         const participantsList = document.getElementById('participants-list');
         const djControls = document.getElementById('dj-controls');
-        const videoUrlInput = document.getElementById('video-url-input');
+        const userControls = document.getElementById('user-controls');
+        const djVideoUrlInput = document.getElementById('dj-video-url-input');
+        const userVideoUrlInput = document.getElementById('user-video-url-input');
         const playVideoBtn = document.getElementById('play-video-btn');
-        const playerContainer = document.getElementById('player-container');
+        const requestSongBtn = document.getElementById('request-song-btn');
         const playerPlaceholder = document.getElementById('player-placeholder');
+        const queueList = document.getElementById('queue-list');
+        const djRequestsSection = document.getElementById('dj-requests-section');
+        const requestsList = document.getElementById('requests-list');
 
         // --- Funções Auxiliares ---
         function generateRoomKey() {
@@ -443,10 +506,7 @@
                 } else if (urlObj.hostname === 'www.youtube.com' || urlObj.hostname === 'youtube.com') {
                     return urlObj.searchParams.get('v');
                 }
-            } catch (e) {
-                console.error("URL inválida:", e);
-                return null;
-            }
+            } catch (e) { return null; }
             return null;
         }
 
@@ -454,7 +514,6 @@
 
         // --- Lógica da Aplicação ---
 
-        // 1. Inicialização e Event Listeners
         window.onload = () => {
             currentUserId = `user-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
             database.ref('.info/serverTimeOffset').on('value', (snapshot) => {
@@ -465,43 +524,29 @@
         createRoomBtn.addEventListener('click', handleCreateRoom);
         joinRoomBtn.addEventListener('click', handleJoinRoom);
         playVideoBtn.addEventListener('click', handlePlayVideo);
+        requestSongBtn.addEventListener('click', handleRequestSong);
         copyLinkBtn.addEventListener('click', handleCopyLink);
 
-        // 2. Lógica de Criação e Entrada na Sala
         function handleCreateRoom() {
             currentUsername = createUsernameInput.value.trim();
-            if (!currentUsername) {
-                showToast("Por favor, insira um nome de usuário.");
-                return;
-            }
+            if (!currentUsername) { return showToast("Por favor, insira um nome de usuário."); }
             isDj = true;
             currentRoomKey = generateRoomKey();
             const roomRef = database.ref(`rooms/${currentRoomKey}`);
             
             roomRef.set({
                 dj: currentUserId,
-                playback: {
-                    videoId: null,
-                    isPlaying: false,
-                    videoTime: 0,
-                    timestamp: 0
-                },
+                playback: { videoId: null, isPlaying: false, videoTime: 0, timestamp: 0 },
                 createdAt: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                joinRoom(currentRoomKey);
-            });
+            }).then(() => joinRoom(currentRoomKey));
         }
 
         function handleJoinRoom() {
             currentUsername = joinUsernameInput.value.trim();
             const roomKey = roomKeyInput.value.trim().toUpperCase();
-            if (!currentUsername || !roomKey) {
-                showToast("Por favor, preencha todos os campos.");
-                return;
-            }
+            if (!currentUsername || !roomKey) { return showToast("Por favor, preencha todos os campos."); }
             
-            const roomRef = database.ref(`rooms/${roomKey}`);
-            roomRef.once('value', snapshot => {
+            database.ref(`rooms/${roomKey}`).once('value', snapshot => {
                 if (snapshot.exists()) {
                     currentRoomKey = roomKey;
                     joinRoom(currentRoomKey);
@@ -513,91 +558,114 @@
 
         function joinRoom(roomKey) {
             const userRef = database.ref(`rooms/${roomKey}/participants/${currentUserId}`);
-            userRef.set({
-                username: currentUsername,
-                isDj: isDj
-            });
-            
+            userRef.set({ username: currentUsername, isDj: isDj });
             userRef.onDisconnect().remove();
 
             switchToPartyView(roomKey);
             listenToRoomUpdates(roomKey);
         }
 
-        // 3. Gerenciamento da Tela da Festa
         function switchToPartyView(roomKey) {
             entryScreen.style.display = 'none';
             partyScreen.style.display = 'flex';
             roomKeyDisplay.textContent = roomKey;
 
             if (isDj) {
-                djControls.classList.add('active');
+                djControls.style.display = 'flex';
+                userControls.style.display = 'none';
+                djRequestsSection.classList.add('active');
+            } else {
+                djControls.style.display = 'none';
+                userControls.style.display = 'flex';
             }
         }
 
         function listenToRoomUpdates(roomKey) {
-            const roomRef = database.ref(`rooms/${roomKey}`);
-            roomRef.on('value', snapshot => {
-                const roomData = snapshot.val();
-                if (!roomData) {
-                    showToast("A sala foi fechada.");
-                    window.location.reload();
-                    return;
-                }
-                
-                updateParticipantsList(roomData.participants);
-                handlePlaybackChange(roomData.playback);
-            });
+            database.ref(`rooms/${roomKey}/participants`).on('value', s => updateParticipantsList(s.val()));
+            database.ref(`rooms/${roomKey}/playback`).on('value', s => handlePlaybackChange(s.val()));
+            database.ref(`rooms/${roomKey}/queue`).on('value', s => updateQueueList(s.val()));
+            if(isDj) {
+                database.ref(`rooms/${roomKey}/requests`).on('value', s => updateRequestsList(s.val()));
+            }
         }
-
+        
         function updateParticipantsList(participants) {
             participantsList.innerHTML = '';
             if (!participants) return;
-
             Object.values(participants).forEach(p => {
                 const li = document.createElement('li');
-                li.classList.add('participant');
-                if (p.isDj) {
-                    li.classList.add('dj');
-                }
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.classList.add('participant-name');
-                nameSpan.textContent = p.username;
-                
-                li.appendChild(nameSpan);
+                li.className = `list-item ${p.isDj ? 'dj' : ''}`;
+                li.innerHTML = `<span class="participant-name">${p.username}</span>`;
                 participantsList.appendChild(li);
             });
         }
 
-        function handleCopyLink() {
-            const inviteLink = `${window.location.href.split('?')[0]}?room=${currentRoomKey}`;
-            navigator.clipboard.writeText(inviteLink).then(() => {
-                showToast("Link da sala copiado!");
+        function updateQueueList(queue) {
+            queueList.innerHTML = '';
+            if (!queue) return;
+            Object.values(queue).forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'list-item';
+                li.textContent = `ID: ${item.videoId} (por ${item.requestedBy})`;
+                queueList.appendChild(li);
             });
+        }
+
+        function updateRequestsList(requests) {
+            requestsList.innerHTML = '';
+            if (!requests) return;
+            Object.entries(requests).forEach(([key, req]) => {
+                const li = document.createElement('li');
+                li.className = 'list-item request-item';
+                li.innerHTML = `
+                    <div class="request-info" title="ID: ${req.videoId}">
+                        Pedido por <span>${req.username}</span>
+                    </div>
+                    <div class="request-actions">
+                        <button class="btn btn-accept" data-req-key="${key}" data-video-id="${req.videoId}" data-username="${req.username}">Aceitar</button>
+                        <button class="btn btn-decline" data-req-key="${key}">Recusar</button>
+                    </div>
+                `;
+                requestsList.appendChild(li);
+            });
+        }
+
+        requestsList.addEventListener('click', (e) => {
+            if (!isDj) return;
+            const target = e.target;
+            const reqKey = target.dataset.reqKey;
+            if (!reqKey) return;
+
+            if (target.classList.contains('btn-accept')) {
+                const videoId = target.dataset.videoId;
+                const username = target.dataset.username;
+                database.ref(`rooms/${currentRoomKey}/queue`).push({
+                    videoId: videoId,
+                    requestedBy: username
+                });
+            }
+            database.ref(`rooms/${currentRoomKey}/requests/${reqKey}`).remove();
+        });
+
+
+        function handleCopyLink() {
+            navigator.clipboard.writeText(`${window.location.href.split('?')[0]}?room=${currentRoomKey}`)
+                .then(() => showToast("Link da sala copiado!"));
         }
         
         const urlParams = new URLSearchParams(window.location.search);
         const roomFromUrl = urlParams.get('room');
-        if (roomFromUrl) {
-            roomKeyInput.value = roomFromUrl;
-        }
+        if (roomFromUrl) { roomKeyInput.value = roomFromUrl; }
 
-        // 4. Lógica do Player de Vídeo (SINCRONIZADO)
+        // --- Lógica do Player e Fila ---
         
-        function onYouTubeIframeAPIReady() {
-            isYouTubeApiReady = true;
-        }
+        function onYouTubeIframeAPIReady() { isYouTubeApiReady = true; }
 
         function handlePlayVideo() {
             if (!isDj) return;
-            const videoUrl = videoUrlInput.value.trim();
-            const videoId = getYouTubeVideoId(videoUrl);
-            
-            if (!videoId) {
-                showToast("URL do YouTube inválida.");
-                return;
-            }
+            const videoId = getYouTubeVideoId(djVideoUrlInput.value.trim());
+            if (!videoId) { return showToast("URL do YouTube inválida."); }
+            djVideoUrlInput.value = '';
             
             database.ref(`rooms/${currentRoomKey}/playback`).set({
                 videoId: videoId,
@@ -607,18 +675,27 @@
             });
         }
 
-        function handlePlaybackChange(playback) {
-            if (!isYouTubeApiReady || !playback) {
-                return;
-            }
+        function handleRequestSong() {
+            const videoId = getYouTubeVideoId(userVideoUrlInput.value.trim());
+            if (!videoId) { return showToast("URL do YouTube inválida."); }
+            userVideoUrlInput.value = '';
 
+            database.ref(`rooms/${currentRoomKey}/requests`).push({
+                videoId: videoId,
+                userId: currentUserId,
+                username: currentUsername
+            });
+            showToast("Seu pedido foi enviado ao DJ!");
+        }
+
+        function handlePlaybackChange(playback) {
+            if (!isYouTubeApiReady || !playback) return;
             lastKnownPlaybackState = playback;
             const { videoId } = playback;
 
             if (!videoId) {
                 playerPlaceholder.style.display = 'block';
-                if (player) player.destroy();
-                player = null;
+                if (player) { player.destroy(); player = null; }
                 return;
             }
             
@@ -626,20 +703,9 @@
 
             if (!player) {
                 player = new YT.Player('player', {
-                    height: '100%',
-                    width: '100%',
-                    videoId: videoId,
-                    playerVars: {
-                        'playsinline': 1,
-                        'autoplay': 0, // Autoplay é controlado pela lógica de sincronização
-                        'controls': isDj ? 1 : 0,
-                        'disablekb': 1,
-                        'modestbranding': 1
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
-                    }
+                    height: '100%', width: '100%', videoId: videoId,
+                    playerVars: { 'playsinline': 1, 'autoplay': 0, 'controls': isDj ? 1 : 0, 'disablekb': 1, 'modestbranding': 1 },
+                    events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
                 });
             } else {
                 if (player.getVideoData().video_id !== videoId) {
@@ -653,7 +719,6 @@
         function onPlayerReady(event) {
             syncPlayerState(lastKnownPlaybackState);
             if (isDj) {
-                // Inicia a sincronização periódica para o DJ
                 syncInterval = setInterval(() => {
                     if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
                         database.ref(`rooms/${currentRoomKey}/playback`).update({
@@ -666,34 +731,49 @@
         }
 
         function onPlayerStateChange(event) {
-            if (!isDj) return; // Apenas o DJ pode alterar o estado
-
+            if (!isDj) return;
             const playbackRef = database.ref(`rooms/${currentRoomKey}/playback`);
             const currentTime = player.getCurrentTime();
 
             if (event.data === YT.PlayerState.PLAYING) {
-                playbackRef.set({
-                    videoId: player.getVideoData().video_id,
+                playbackRef.update({
                     isPlaying: true,
                     videoTime: currentTime,
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 });
             } else if (event.data === YT.PlayerState.PAUSED) {
-                playbackRef.update({
-                    isPlaying: false,
-                    videoTime: currentTime
-                });
+                playbackRef.update({ isPlaying: false, videoTime: currentTime });
+            } else if (event.data === YT.PlayerState.ENDED) {
+                playNextInQueue();
             }
+        }
+
+        function playNextInQueue() {
+            if (!isDj) return;
+            const queueRef = database.ref(`rooms/${currentRoomKey}/queue`).orderByKey().limitToFirst(1);
+            queueRef.once('value', snapshot => {
+                if (snapshot.exists()) {
+                    const [key, nextSong] = Object.entries(snapshot.val())[0];
+                    database.ref(`rooms/${currentRoomKey}/playback`).set({
+                        videoId: nextSong.videoId,
+                        isPlaying: true,
+                        videoTime: 0,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    database.ref(`rooms/${currentRoomKey}/queue/${key}`).remove();
+                } else {
+                    database.ref(`rooms/${currentRoomKey}/playback`).update({ isPlaying: false });
+                    showToast("Fila de músicas terminou.");
+                }
+            });
         }
 
         function syncPlayerState(playback) {
             if (!player || !playback || !playback.videoId) return;
-
             const { isPlaying, videoTime, timestamp } = playback;
             
             let targetTime = videoTime;
             if (isPlaying) {
-                // Calcula o tempo atual do vídeo com base no tempo da última atualização do DJ
                 const timeSinceLastUpdate = (getServerTime() - timestamp) / 1000.0;
                 targetTime = videoTime + timeSinceLastUpdate;
             }
@@ -701,13 +781,10 @@
             const currentTime = player.getCurrentTime();
             const timeDifference = Math.abs(currentTime - targetTime);
 
-            // Apenas busca (seek) se a diferença for maior que um limiar (ex: 1.5 segundos)
-            // para evitar saltos desnecessários por pequenas latências.
             if (timeDifference > 1.5) {
                 player.seekTo(targetTime, true);
             }
 
-            // Sincroniza o estado de play/pause
             if (isPlaying && player.getPlayerState() !== YT.PlayerState.PLAYING) {
                 player.playVideo();
             } else if (!isPlaying && player.getPlayerState() === YT.PlayerState.PLAYING) {
